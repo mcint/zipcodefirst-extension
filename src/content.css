@@ -1,0 +1,62 @@
+#zipfirst-panel {
+  position: fixed;
+  z-index: 2147483647;
+  top: 16px;
+  right: 16px;
+  width: min(380px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 12px;
+  background: Canvas;
+  color: CanvasText;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
+  font: 13px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#zipfirst-panel * { box-sizing: border-box; }
+#zipfirst-panel strong { display: block; margin-bottom: 8px; font-size: 14px; }
+#zipfirst-panel label { display: block; margin: 8px 0 4px; font-weight: 600; }
+#zipfirst-panel input,
+#zipfirst-panel select,
+#zipfirst-panel button {
+  width: 100%;
+  min-height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  padding: 6px 8px;
+  font: inherit;
+  background: Field;
+  color: FieldText;
+}
+#zipfirst-panel button {
+  margin-top: 8px;
+  cursor: pointer;
+  background: ButtonFace;
+  color: ButtonText;
+}
+#zipfirst-panel .zipfirst-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
+#zipfirst-panel .zipfirst-row button { width: auto; padding-inline: 10px; }
+#zipfirst-panel .zipfirst-muted { opacity: 0.72; margin-top: 8px; }
+#zipfirst-panel .zipfirst-status { margin-top: 8px; }
+#zipfirst-panel .zipfirst-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+}
+
+.zipfirst-highlight {
+  outline: 2px solid Highlight !important;
+  outline-offset: 2px !important;
+}

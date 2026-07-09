@@ -1,0 +1,16 @@
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Node/build, if added later
+node_modules/
+dist/
+build/
+coverage/
+
+# Extension packages
+*.crx
+*.pem
+*.zip
