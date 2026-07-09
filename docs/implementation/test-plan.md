@@ -2,18 +2,24 @@
 
 ## Local smoke test
 
-1. Load the extension unpacked.
-2. Open `test-page.html` in Chrome.
+1. Load the extension unpacked from `extensions/browser/`.
+2. Open `examples/basic-zip-first.html` in Chrome.
 3. Click the ZIP First extension button.
-4. Enter `94110`.
+4. Enter `94110` in the extension overlay.
 5. Confirm:
+   - ZIP is filled into the page postal-code field;
    - city is filled;
    - state is filled;
    - country is filled;
-   - ZIP is filled;
    - street address field remains editable;
    - detected fields are highlighted;
    - no field is locked.
+
+## Library smoke test
+
+1. Open `examples/library-demo.html`.
+2. Enter `94110` into the postal-code field.
+3. Confirm city/state/country fill and street address receives focus.
 
 ## Edge ZIPs to test
 

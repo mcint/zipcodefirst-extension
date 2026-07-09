@@ -3,17 +3,19 @@
 ## Repository structure
 
 ```text
-README.md                    # project hub
-extension/                   # browser extension reference implementation
+README.md                       # project hub
+extensions/browser/             # browser extension reference implementation
   manifest.json
-  src/background.js          # toolbar click, script injection, ZIP lookup cache
-  src/content.js             # overlay UI, form detection, fill logic
-  src/content.css            # overlay and field highlight styles
-examples/                    # native ZIP-first interface examples
-docs/                        # project site and research notes
+  src/background.js             # toolbar click, script injection, ZIP lookup cache
+  src/content.js                # overlay UI, form detection, fill logic
+  src/content.css               # overlay and field highlight styles
+library/                        # tiny embeddable JS helper
+examples/                       # native ZIP-first interface examples
+site/                           # GitHub Pages / public project site draft
+docs/                           # research and implementation notes
 ```
 
-## Activation
+## Extension activation
 
 The extension does nothing until the user clicks the toolbar button.
 
@@ -41,18 +43,23 @@ Background worker:
 
 Detection weights:
 
+- fields inside the extension overlay are ignored;
 - `autocomplete` tokens first;
-- then `name`, `id`, `placeholder`, `aria-label`, `data-testid`, `data-field`, class names;
+- then `name`, `id`, `placeholder`, `aria-label`, `data-testid`, `data-field`, `data-name`, class names;
 - then explicit `<label for>` and enclosing `<label>` text;
 - camelCase field names are normalized.
 
-The extension scores candidate roots and prefers roots with a ZIP field plus other address fields.
+The extension scores candidate roots and prefers roots with a ZIP field plus other address fields. If no strong form root exists, it still tries a loose page-wide field match.
 
 ## Fill behavior
 
 The content script sets field values using the native input value setter where possible, then dispatches bubbling `input` and `change` events. This is more compatible with controlled UI frameworks.
 
 All fields stay editable.
+
+## Library behavior
+
+The library exposes `ZipFirst.enhance(formOrSelector, options)`. It detects address fields within a native form, listens to the postal-code field, performs lookup, fills defaults, and focuses the street-address field.
 
 ## Privacy posture
 

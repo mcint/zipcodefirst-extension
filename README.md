@@ -2,7 +2,7 @@
 
 A public project hub and reference implementation for ZIP/postal-code-first address UX.
 
-The initial artifact is a click-to-activate browser extension, but the project should grow into examples, research, data-provider notes, test fixtures, and eventually a small library for sites that want to do this natively.
+The first artifact is a click-to-activate browser extension, but the project is meant to grow into examples, research, data-provider notes, test fixtures, a GitHub Pages site, and a small embeddable library for sites that want to do this natively.
 
 ## Thesis
 
@@ -14,9 +14,11 @@ Fill the likely postal defaults. Keep every field editable. Never pretend that a
 
 ## Repository map
 
-- [`extension/`](extension/) — browser extension reference implementation.
+- [`extensions/browser/`](extensions/browser/) — browser extension reference implementation.
+- [`library/`](library/) — tiny embeddable JS helper for native site adoption.
 - [`examples/`](examples/) — native ZIP-first form examples and annotated UX sketches.
-- [`docs/`](docs/) — research, project site notes, implementation docs, and internationalization model.
+- [`site/`](site/) — GitHub Pages source / public project site draft.
+- [`docs/`](docs/) — research, implementation docs, and internationalization model.
 - [`docs/inspiration/`](docs/inspiration/) — vision, comparables, alternatives, evaluation rubric, future directions, sister projects.
 - [`AUTHORS.md`](AUTHORS.md) — authorship/provenance.
 
@@ -25,14 +27,26 @@ Fill the likely postal defaults. Keep every field editable. Never pretend that a
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
 3. Click **Load unpacked**.
-4. Select the `extension/` directory.
+4. Select the `extensions/browser/` directory.
 5. Open [`examples/basic-zip-first.html`](examples/basic-zip-first.html) or any page with an address form.
 6. Click the ZIP First extension button.
+
+## Try the library locally
+
+Open [`examples/library-demo.html`](examples/library-demo.html), or copy the pattern into a site:
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/mcint/zipcodefirst-extension@main/library/zipfirst.js"></script>
+<script>
+  ZipFirst.enhance(document.querySelector("form"));
+</script>
+```
 
 ## Current status
 
 Prototype, US-first, intentionally small.
 
+- License: MIT.
 - Browser extension: Chrome/Chromium MV3 now; Firefox/WebExtension compatibility is a design goal.
 - Activation model: toolbar click only.
 - Current lookup provider: Zippopotam.us.

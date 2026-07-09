@@ -2,10 +2,13 @@
   const api = globalThis.browser || chrome;
   if (window.__zipFirst?.activate) return window.__zipFirst.activate();
 
+  const PANEL_ID = "zipfirst-panel";
+  const FIELD_SELECTOR = "input,select,textarea";
   const TOKENS = {
     zip: [
       "postal-code", "postalcode", "postal", "post-code", "postcode",
-      "zip", "zipcode", "zip-code", "postal_code", "zip_code"
+      "zip", "zipcode", "zip-code", "postal_code", "zip_code",
+      "postal-code-input", "postal-code-field", "postal-code-fieldset"
     ],
     city: ["address-level2", "addresslevel2", "city", "locality", "town"],
     state: ["address-level1", "addresslevel1", "state", "province", "region"],
@@ -23,17 +26,17 @@
     const p = ensurePanel();
     p.hidden = false;
     const fs = detectForms();
-    activeForm = fs[0] || { root: document, fields: {} };
+    activeForm = fs[0] || detectLoosePageForm() || { root: document, fields: {} };
     wireZipFields(fs);
     highlight(activeForm.fields);
     setStatus(fs.length ? `Found ${fs.length} likely address form${fs.length === 1 ? "" : "s"}.` : "No obvious address form found; I’ll still try matching fields.");
   }
 
   function ensurePanel() {
-    let p = document.getElementById("zipfirst-panel");
+    let p = document.getElementById(PANEL_ID);
     if (p) return p;
     p = document.createElement("section");
-    p.id = "zipfirst-panel";
+    p.id = PANEL_ID;
     p.setAttribute("role", "dialog");
     p.setAttribute("aria-label", "ZIP First");
     p.innerHTML = `
@@ -63,31 +66,39 @@
 
   function detectForms() {
     const roots = [document, ...document.querySelectorAll("form, [data-testid], [class], [id]")]
-      .filter((r) => r.querySelector?.("input,select,textarea"));
+      .filter((r) => r.id !== PANEL_ID && !r.closest?.(`#${PANEL_ID}`))
+      .filter((r) => [...r.querySelectorAll?.(FIELD_SELECTOR) || []].some((el) => !insidePanel(el)));
+
     const found = roots.map((root) => {
       const fields = Object.fromEntries(Object.keys(TOKENS).map((k) => [k, field(root, k)]));
       const score = Object.entries(fields).reduce((s, [k, el]) => s + (el ? (k === "zip" ? 5 : 2) : 0), 0);
       return { root, fields, score };
-    }).filter((f) => f.fields.zip && f.score >= 6).sort((a, b) => b.score - a.score);
+    }).filter((f) => f.fields.zip && f.score >= 5).sort((a, b) => b.score - a.score);
+
     return found.filter((f, i) => !found.slice(0, i).some((g) => g.root.contains(f.root))).slice(0, 8);
+  }
+
+  function detectLoosePageForm() {
+    const fields = Object.fromEntries(Object.keys(TOKENS).map((k) => [k, field(document, k)]));
+    return Object.values(fields).some(Boolean) ? { root: document, fields } : null;
   }
 
   function field(root, kind) {
     let best = null, bestScore = 0;
-    for (const el of [...root.querySelectorAll?.("input,select,textarea") || []]) {
-      if (el.disabled || el.readOnly || el.type === "hidden" || hidden(el)) continue;
+    for (const el of [...root.querySelectorAll?.(FIELD_SELECTOR) || []]) {
+      if (insidePanel(el) || el.disabled || el.readOnly || el.type === "hidden" || hidden(el)) continue;
 
       const hay = fieldText(el);
       const autocomplete = tokenList(el.getAttribute("autocomplete"));
       let score = TOKENS[kind].reduce((s, t) => s + (hay.includes(t) ? 2 : 0), 0);
 
-      if (kind === "zip" && autocomplete.includes("postal-code")) score += 12;
+      if (kind === "zip" && autocomplete.includes("postal-code")) score += 16;
       if (kind === "city" && autocomplete.includes("address-level2")) score += 12;
       if (kind === "state" && autocomplete.includes("address-level1")) score += 12;
       if (kind === "country" && (autocomplete.includes("country") || autocomplete.includes("country-name"))) score += 12;
       if (kind === "street1" && autocomplete.includes("address-line1")) score += 12;
 
-      if (kind === "zip" && el.inputMode === "numeric") score += 1;
+      if (kind === "zip" && looksPostalLike(el)) score += 4;
       if (kind === "zip" && /^\d{5}(?:-?\d{4})?$/.test(el.value || "")) score += 4;
 
       if (score > bestScore) [best, bestScore] = [el, score];
@@ -95,10 +106,24 @@
     return best;
   }
 
+  function looksPostalLike(el) {
+    const hay = fieldText(el);
+    return (
+      el.inputMode === "numeric" ||
+      /(^|-)postal(-|$)/.test(hay) ||
+      /(^|-)postcode(-|$)/.test(hay) ||
+      /(^|-)zip(code)?(-|$)/.test(hay)
+    );
+  }
+
+  function insidePanel(el) {
+    return !!el.closest?.(`#${PANEL_ID}`);
+  }
+
   function hidden(el) {
     const rect = el.getBoundingClientRect();
     const style = getComputedStyle(el);
-    return rect.width === 0 && rect.height === 0 || style.visibility === "hidden" || style.display === "none";
+    return (rect.width === 0 && rect.height === 0) || style.visibility === "hidden" || style.display === "none";
   }
 
   function fieldText(el) {
@@ -111,6 +136,7 @@
       el.getAttribute("aria-label"),
       el.getAttribute("data-testid"),
       el.getAttribute("data-field"),
+      el.getAttribute("data-name"),
       el.className,
       label,
       el.closest("label")?.innerText
@@ -152,7 +178,7 @@
     catch (e) { return setStatus(e?.message || "ZIP lookup failed."); }
     if (!r?.ok) return setStatus(r?.error || "ZIP lookup failed.");
     lastLookup = r.result;
-    activeForm = preferred || detectForms()[0] || { root: document, fields: {} };
+    activeForm = preferred || detectForms()[0] || detectLoosePageForm() || { root: document, fields: {} };
     renderPlaces(r.result);
     fill(activeForm, r.result.places[0], r.result.zip);
   }

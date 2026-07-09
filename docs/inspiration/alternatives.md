@@ -15,13 +15,13 @@ Why ZIP First still exists:
 
 Best long-term path.
 
-A tiny JS package could expose:
+A tiny JS package can expose:
 
 ```js
-zipFirst.enhance(form, {
+ZipFirst.enhance(form, {
   country: "US",
-  provider: zipFirst.providers.zippopotamus()
-})
+  lookup: ZipFirst.lookupZippopotamus
+});
 ```
 
 The extension is a wedge/demo. The site library is the actual win.

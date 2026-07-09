@@ -3,6 +3,7 @@
 ## Near-term
 
 - Package extension for Chrome Web Store.
+- Test Firefox/WebExtension compatibility.
 - Add a 30-second demo GIF/video.
 - Add browser-extension icons.
 - Improve field detection against shadow DOM and common checkout frameworks.

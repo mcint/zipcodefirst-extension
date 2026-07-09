@@ -13,7 +13,7 @@ Zippopotam.us is used for v0 because it is simple JSON and good enough for a UX 
 
 ## Local/offline cache
 
-The extension now caches looked-up ZIP results in extension local storage with a TTL. This is reasonable because:
+The extension caches looked-up ZIP results in extension local storage with a TTL. This is reasonable because:
 
 - lookup happens only after invocation or ZIP entry;
 - the key is only a ZIP, not a full address;
@@ -25,7 +25,7 @@ A small ZIP lookup table is a great fit for SQLite + Datasette or a static JSON/
 
 Possible path:
 
-1. Acquire a ZIP-to-place dataset with license compatible with the repo/distribution goals.
+1. Acquire a ZIP-to-place dataset with license compatible with MIT distribution.
 2. Normalize to `country_code, postal_code, place_name, admin1_name, admin1_code, source, updated_at`.
 3. Build a tiny SQLite database.
 4. Export JSON for extension bundling or serve via Datasette for demos.

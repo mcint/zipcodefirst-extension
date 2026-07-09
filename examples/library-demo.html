@@ -1,24 +1,25 @@
 <!doctype html>
 <meta charset="utf-8" />
-<title>ZIP-first basic form example</title>
+<title>ZIP First library demo</title>
+<script src="../library/zipfirst.js"></script>
 <style>
   body { font: 16px system-ui; max-width: 760px; margin: 40px auto; padding: 0 20px; }
   form { display: grid; gap: 12px; max-width: 420px; }
   label { display: grid; gap: 4px; font-weight: 600; }
   input, select { font: inherit; padding: 8px; }
-  .hint { color: #555; max-width: 560px; }
+  output { display: block; margin-top: 16px; }
 </style>
-<h1>ZIP-first address form</h1>
-<p class="hint">This is the interface the project wants to normalize: ZIP first, infer city/state/country, then move the human to street address.</p>
-<form>
-  <label>ZIP / ZIP+4
+<h1>ZIP First library demo</h1>
+<p>Enter <code>94110</code>. The library fills city/state/country and focuses the street field.</p>
+<form id="address">
+  <label>Postal code
     <input id="postal-code" autocomplete="postal-code" name="postal_code" inputmode="numeric" placeholder="94110" />
   </label>
   <label>City
-    <input autocomplete="address-level2" name="address_level2" />
+    <input autocomplete="address-level2" name="city" />
   </label>
   <label>State
-    <select autocomplete="address-level1" name="address_level1">
+    <select autocomplete="address-level1" name="state">
       <option></option>
       <option value="CA">California</option>
       <option value="NY">New York</option>
@@ -33,9 +34,17 @@
     </select>
   </label>
   <label>Street address
-    <input autocomplete="address-line1" name="address_line1" />
-  </label>
-  <label>Apartment / suite
-    <input autocomplete="address-line2" name="address_line2" />
+    <input autocomplete="address-line1" name="street" />
   </label>
 </form>
+<output id="status"></output>
+<script>
+  ZipFirst.enhance(document.querySelector("#address"), {
+    onFill({ place }) {
+      document.querySelector("#status").textContent = `Filled ${place.locality}, ${place.adminAreaCode}.`;
+    },
+    onError(error) {
+      document.querySelector("#status").textContent = error.message;
+    }
+  });
+</script>

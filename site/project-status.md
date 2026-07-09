@@ -3,10 +3,11 @@
 ## Now
 
 - Public prototype repo exists.
-- Chrome/Chromium MV3 extension scaffold exists.
-- Root repo has been reshaped as a project hub.
-- Extension lives in `extension/`.
+- License is MIT to maximize adoption by websites, libraries, companies, and public-sector forms.
+- Browser extension lives in `extensions/browser/`.
+- Embeddable library lives in `library/`.
 - Examples live in `examples/`.
+- Site draft lives in `site/`.
 - Documentation lives in `docs/`.
 - ZIP lookup uses Zippopotam.us and local extension storage cache.
 
@@ -17,7 +18,7 @@
 3. Record a short demo.
 4. Add fixture corpus and scoring harness.
 5. Add provider interface.
-6. Decide GitHub Pages publishing path.
+6. Enable GitHub Pages from `site/` or add a build workflow.
 7. Research official/commercial US data paths.
 8. Build country profile examples.
 

@@ -1,0 +1,1 @@
+{"name":"zipfirst","version":"0.1.0","description":"Tiny ZIP/postal-code-first address form helper.","license":"MIT","main":"zipfirst.js","exports":"./zipfirst.js","files":["zipfirst.js","README.md"]}

@@ -14,3 +14,5 @@ This directory is for the larger project shape: why ZIP-first matters, what it c
 ## Core idea
 
 Address forms should ask for the most informative low-friction field early. In the US, that is often ZIP. Globally, it varies by country. This project should become a small, testable pressure campaign toward better address UX, not only a browser-extension hack.
+
+MIT licensing supports that goal: copy the code, copy the examples, or just copy the interaction pattern.

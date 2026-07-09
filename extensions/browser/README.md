@@ -7,7 +7,7 @@ Reference browser-extension implementation for ZIP-first address form assistance
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
 3. Click **Load unpacked**.
-4. Select this `extension/` directory.
+4. Select this `extensions/browser/` directory.
 5. Click the ZIP First toolbar button on a page with an address form.
 
 ## Design goals
