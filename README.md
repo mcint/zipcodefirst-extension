@@ -1,77 +1,57 @@
-# ZIP First Extension
+# ZIP First
 
-Invoke ZIP-first help on any address form.
+A public project hub and reference implementation for ZIP/postal-code-first address UX.
 
-This extension is a tiny, click-to-activate browser helper for the idea behind [zipcodefirst.com](https://zipcodefirst.com/): ask for the ZIP/postal code early, use it to fill the boring fields, and leave the human to type only what the machine cannot safely know.
+The initial artifact is a click-to-activate browser extension, but the project should grow into examples, research, data-provider notes, test fixtures, and eventually a small library for sites that want to do this natively.
 
-## Status
+## Thesis
 
-Prototype, US-first, intentionally small.
-
-- Browser extension: Chrome/Chromium MV3
-- Activation model: toolbar click only
-- Current lookup provider: Zippopotam.us
-- Current country profile: United States
-- Current behavior: fill ZIP, city, state, country when fields can be detected
-- Non-goal for v0: full USPS address validation or legal/jurisdiction geocoding
-
-## Why
-
-Most US address forms ask for street, city, state, ZIP, then country. That ordering is wasteful: a valid US ZIP Code usually gives the form enough information to default city, state, and country. It does **not** uniquely identify a deliverable address, and it does **not** define legal jurisdiction. The product stance here is simple:
+Most US address forms ask for street, city, state, ZIP, then country. That ordering is backwards for many flows. A valid US ZIP Code usually gives useful defaults for city, state, and country.
 
 > ZIP-first should be a reversible default, not a trap.
 
-Fill the likely postal defaults. Keep every field editable. Never pretend that a five-digit ZIP is a complete address.
+Fill the likely postal defaults. Keep every field editable. Never pretend that a five-digit ZIP is a complete address, a deliverability guarantee, or a legal jurisdiction.
 
-## Install locally
+## Repository map
+
+- [`extension/`](extension/) — browser extension reference implementation.
+- [`examples/`](examples/) — native ZIP-first form examples and annotated UX sketches.
+- [`docs/`](docs/) — research, project site notes, implementation docs, and internationalization model.
+- [`docs/inspiration/`](docs/inspiration/) — vision, comparables, alternatives, evaluation rubric, future directions, sister projects.
+- [`AUTHORS.md`](AUTHORS.md) — authorship/provenance.
+
+## Try the extension locally
 
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
 3. Click **Load unpacked**.
-4. Select this repository folder.
-5. Visit a page with an address form and click the ZIP First extension button.
+4. Select the `extension/` directory.
+5. Open [`examples/basic-zip-first.html`](examples/basic-zip-first.html) or any page with an address form.
+6. Click the ZIP First extension button.
 
-Use `test-page.html` as a fast local smoke test.
+## Current status
 
-## What it does
+Prototype, US-first, intentionally small.
 
-- Adds a small ZIP First overlay only after the extension button is clicked.
-- Detects likely address forms using `autocomplete`, labels, names, IDs, placeholders, and nearby text.
-- Accepts `94110` or `94110-1234`; v0 uses the leading five digits for lookup.
-- Fills city, state, country, and ZIP if matching controls are found.
-- Highlights detected fields so the user can inspect what happened.
-- Leaves all fields editable.
-- Focuses the street field after lookup when it can find one.
+- Browser extension: Chrome/Chromium MV3 now; Firefox/WebExtension compatibility is a design goal.
+- Activation model: toolbar click only.
+- Current lookup provider: Zippopotam.us.
+- Cache: extension local storage, keyed by ZIP, with TTL.
+- Current behavior: fill ZIP, city, state, country when fields can be detected.
+- Non-goal for v0: full USPS address validation, CASS, ZIP+4 deliverability, tax/voting/legal jurisdiction.
 
-## What it does not do yet
+## Public argument
 
-- No official USPS City State Product ingestion.
-- No CASS / ZIP+4 / delivery point validation.
-- No carrier-specific validation for UPS/FedEx/DHL.
-- No legal/tax/voting jurisdiction lookup.
-- No street-address autocomplete scoped to ZIP.
-- No site-specific adapters for heavily customized React/select widgets.
-- No international country-profile execution yet.
+The real win is not an extension. The extension is the wedge.
 
-## Documentation map
+The project should normalize better address forms:
 
-- [`docs/research/us-usps.md`](docs/research/us-usps.md) — US claims, USPS docs, edge cases.
-- [`docs/research/web-platform.md`](docs/research/web-platform.md) — HTML autocomplete/inputmode and extension surface.
-- [`docs/international/address-profile-schema.md`](docs/international/address-profile-schema.md) — how to generalize beyond the US.
-- [`docs/inspiration/`](docs/inspiration/) — vision, comparables, alternatives, ranking criteria, sister projects.
-- [`docs/implementation/architecture.md`](docs/implementation/architecture.md) — how the extension works.
-- [`docs/implementation/test-plan.md`](docs/implementation/test-plan.md) — how to judge whether it works.
-
-## First-roadmap sketch
-
-1. Make v0 robust on ordinary ecommerce checkout pages.
-2. Add screenshot/video demo for README and extension store listing.
-3. Add a provider interface and cache freshness metadata.
-4. Add official-ish US ZIP data ingestion path or pluggable commercial providers.
-5. Add country profiles for Canada, UK, Germany, Japan, France, India, Australia.
-6. Build a benchmark corpus of real-world forms and score implementations.
-7. Create a bookmarklet/userscript variant for people who do not want an extension.
-8. Publish a micro-library for sites that want to implement ZIP-first natively.
+1. Ask country first when global scope matters.
+2. Ask postal code early when the country profile says it helps.
+3. Fill inferable locality/admin fields.
+4. Keep inferred fields visible and editable.
+5. Move the human to the street address quickly.
+6. Use correct HTML `autocomplete` and `inputmode` attributes.
 
 ## Attribution
 

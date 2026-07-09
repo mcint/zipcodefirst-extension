@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Annotated ZIP-first address UX</title>
+<style>
+  body { font: 16px system-ui; max-width: 960px; margin: 40px auto; padding: 0 20px; }
+  .wrap { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 32px; align-items: start; }
+  form { display: grid; gap: 12px; }
+  label { display: grid; gap: 4px; font-weight: 600; }
+  input, select { font: inherit; padding: 8px; }
+  .note { border-left: 4px solid currentColor; padding-left: 12px; margin: 0 0 16px; }
+  .graph { display: grid; gap: 12px; }
+  .node { border: 1px solid #999; border-radius: 10px; padding: 10px; }
+  .implicit { border-style: dashed; }
+  .arrow { font-weight: 700; }
+</style>
+<h1>Annotated ZIP-first UX</h1>
+<p class="note">A ZIP-first form should make inference visible, editable, and reversible. ZIP is an input to postal defaults, not a complete address and not a jurisdiction oracle.</p>
+<div class="wrap">
+  <form>
+    <label>1. ZIP / ZIP+4 — explicit
+      <input autocomplete="postal-code" name="postal_code" inputmode="numeric" placeholder="94110" />
+    </label>
+    <label>2. City — inferred, editable
+      <input autocomplete="address-level2" name="city" value="San Francisco" />
+    </label>
+    <label>3. State — inferred, editable
+      <select autocomplete="address-level1" name="state">
+        <option value="CA" selected>California</option>
+      </select>
+    </label>
+    <label>4. Country — inferred/profiled, editable
+      <select autocomplete="country" name="country">
+        <option value="US" selected>United States</option>
+      </select>
+    </label>
+    <label>5. Street address — human input
+      <input autocomplete="address-line1" name="street" placeholder="123 Example St" />
+    </label>
+  </form>
+  <section class="graph" aria-label="Data dependency explanation">
+    <div class="node">ZIP/postal code: explicit low-friction input</div>
+    <div class="arrow">↓ defaults</div>
+    <div class="node implicit">City/state/country: inferred postal defaults, always editable</div>
+    <div class="arrow">↓ focuses next</div>
+    <div class="node">Street address: explicit human input, optionally autocomplete-scoped later</div>
+    <div class="node">Validation layer: optional later step. Do not conflate with ZIP-first defaulting.</div>
+  </section>
+</div>

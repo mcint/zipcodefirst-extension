@@ -1,14 +1,20 @@
 {
   "manifest_version": 3,
   "name": "ZIP First",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Invoke ZIP-first helpers on address forms. Fill city, state, and country from a US ZIP or ZIP+4.",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["https://api.zippopotam.us/*"],
   "background": {
     "service_worker": "src/background.js"
   },
   "action": {
     "default_title": "ZIP First: activate on this page"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "zipfirst@mcint.io",
+      "strict_min_version": "109.0"
+    }
   }
 }

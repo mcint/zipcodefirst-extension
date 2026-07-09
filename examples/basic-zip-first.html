@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>ZIP-first basic form example</title>
+<style>
+  body { font: 16px system-ui; max-width: 760px; margin: 40px auto; padding: 0 20px; }
+  form { display: grid; gap: 12px; max-width: 420px; }
+  label { display: grid; gap: 4px; font-weight: 600; }
+  input, select { font: inherit; padding: 8px; }
+  .hint { color: #555; max-width: 560px; }
+</style>
+<h1>ZIP-first address form</h1>
+<p class="hint">This is the interface the project wants to normalize: ZIP first, infer city/state/country, then move the human to street address.</p>
+<form>
+  <label>ZIP / ZIP+4
+    <input autocomplete="postal-code" name="postal_code" inputmode="numeric" placeholder="94110" />
+  </label>
+  <label>City
+    <input autocomplete="address-level2" name="address_level2" />
+  </label>
+  <label>State
+    <select autocomplete="address-level1" name="address_level1">
+      <option></option>
+      <option value="CA">California</option>
+      <option value="NY">New York</option>
+      <option value="IL">Illinois</option>
+    </select>
+  </label>
+  <label>Country
+    <select autocomplete="country" name="country">
+      <option></option>
+      <option value="US">United States</option>
+      <option value="CA">Canada</option>
+    </select>
+  </label>
+  <label>Street address
+    <input autocomplete="address-line1" name="address_line1" />
+  </label>
+  <label>Apartment / suite
+    <input autocomplete="address-line2" name="address_line2" />
+  </label>
+</form>

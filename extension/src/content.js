@@ -1,18 +1,22 @@
 (() => {
+  const api = globalThis.browser || chrome;
   if (window.__zipFirst?.activate) return window.__zipFirst.activate();
 
   const TOKENS = {
-    zip: ["postal-code", "postcode", "postal", "zip", "zipcode", "zip-code"],
-    city: ["address-level2", "city", "locality", "town"],
-    state: ["address-level1", "state", "province", "region"],
-    country: ["country", "country-name"],
-    street1: ["address-line1", "address1", "addr1", "street", "line1"]
+    zip: [
+      "postal-code", "postalcode", "postal", "post-code", "postcode",
+      "zip", "zipcode", "zip-code", "postal_code", "zip_code"
+    ],
+    city: ["address-level2", "addresslevel2", "city", "locality", "town"],
+    state: ["address-level1", "addresslevel1", "state", "province", "region"],
+    country: ["country", "country-name", "countryname"],
+    street1: ["address-line1", "addressline1", "address1", "addr1", "street", "street-address", "line1"]
   };
   let activeForm = null;
   let lastLookup = null;
 
   window.__zipFirst = { activate };
-  chrome.runtime.onMessage.addListener((m) => { if (m?.type === "zipfirst:activate") activate(); });
+  api.runtime.onMessage.addListener((m) => { if (m?.type === "zipfirst:activate") activate(); });
   activate();
 
   function activate() {
@@ -62,7 +66,7 @@
       .filter((r) => r.querySelector?.("input,select,textarea"));
     const found = roots.map((root) => {
       const fields = Object.fromEntries(Object.keys(TOKENS).map((k) => [k, field(root, k)]));
-      const score = Object.entries(fields).reduce((s, [k, el]) => s + (el ? (k === "zip" ? 4 : 2) : 0), 0);
+      const score = Object.entries(fields).reduce((s, [k, el]) => s + (el ? (k === "zip" ? 5 : 2) : 0), 0);
       return { root, fields, score };
     }).filter((f) => f.fields.zip && f.score >= 6).sort((a, b) => b.score - a.score);
     return found.filter((f, i) => !found.slice(0, i).some((g) => g.root.contains(f.root))).slice(0, 8);
@@ -71,22 +75,57 @@
   function field(root, kind) {
     let best = null, bestScore = 0;
     for (const el of [...root.querySelectorAll?.("input,select,textarea") || []]) {
-      if (el.disabled || el.readOnly || el.type === "hidden" || !el.offsetParent) continue;
+      if (el.disabled || el.readOnly || el.type === "hidden" || hidden(el)) continue;
+
       const hay = fieldText(el);
+      const autocomplete = tokenList(el.getAttribute("autocomplete"));
       let score = TOKENS[kind].reduce((s, t) => s + (hay.includes(t) ? 2 : 0), 0);
-      if (kind === "zip" && el.autocomplete === "postal-code") score += 8;
-      if (kind === "city" && el.autocomplete === "address-level2") score += 8;
-      if (kind === "state" && el.autocomplete === "address-level1") score += 8;
-      if (kind === "country" && ["country", "country-name"].includes(el.autocomplete)) score += 8;
+
+      if (kind === "zip" && autocomplete.includes("postal-code")) score += 12;
+      if (kind === "city" && autocomplete.includes("address-level2")) score += 12;
+      if (kind === "state" && autocomplete.includes("address-level1")) score += 12;
+      if (kind === "country" && (autocomplete.includes("country") || autocomplete.includes("country-name"))) score += 12;
+      if (kind === "street1" && autocomplete.includes("address-line1")) score += 12;
+
+      if (kind === "zip" && el.inputMode === "numeric") score += 1;
+      if (kind === "zip" && /^\d{5}(?:-?\d{4})?$/.test(el.value || "")) score += 4;
+
       if (score > bestScore) [best, bestScore] = [el, score];
     }
     return best;
   }
 
+  function hidden(el) {
+    const rect = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    return rect.width === 0 && rect.height === 0 || style.visibility === "hidden" || style.display === "none";
+  }
+
   function fieldText(el) {
     const label = el.id ? document.querySelector(`label[for="${CSS.escape(el.id)}"]`)?.innerText : "";
-    return [el.name, el.id, el.autocomplete, el.placeholder, el.getAttribute("aria-label"), el.getAttribute("data-testid"), el.className, label, el.closest("label")?.innerText]
-      .filter(Boolean).join(" ").toLowerCase().replace(/[_\s]+/g, "-");
+    return normalizeWords([
+      el.name,
+      el.id,
+      el.autocomplete,
+      el.placeholder,
+      el.getAttribute("aria-label"),
+      el.getAttribute("data-testid"),
+      el.getAttribute("data-field"),
+      el.className,
+      label,
+      el.closest("label")?.innerText
+    ].filter(Boolean).join(" "));
+  }
+
+  function normalizeWords(value) {
+    return String(value || "")
+      .replace(/([a-z])([A-Z])/g, "$1-$2")
+      .toLowerCase()
+      .replace(/[_\s]+/g, "-");
+  }
+
+  function tokenList(value) {
+    return String(value || "").toLowerCase().split(/\s+/).filter(Boolean);
   }
 
   function wireZipFields(forms) {
@@ -98,7 +137,7 @@
       z.addEventListener("input", debounce(() => {
         if (!extractZip(z.value)) return;
         activeForm = f;
-        document.getElementById("zipfirst-zip").value = z.value;
+        setInputValue(document.getElementById("zipfirst-zip"), z.value);
         lookupAndFill(z.value, f);
       }, 250));
     }
@@ -109,7 +148,7 @@
     if (!zip) return setStatus("Enter a 5-digit ZIP or ZIP+4.");
     setStatus(`Looking up ${zip}…`);
     let r;
-    try { r = await chrome.runtime.sendMessage({ type: "zipfirst:lookupZip", zip }); }
+    try { r = await api.runtime.sendMessage({ type: "zipfirst:lookupZip", zip }); }
     catch (e) { return setStatus(e?.message || "ZIP lookup failed."); }
     if (!r?.ok) return setStatus(r?.error || "ZIP lookup failed.");
     lastLookup = r.result;
@@ -120,33 +159,42 @@
 
   function renderPlaces(result) {
     const s = document.getElementById("zipfirst-place");
-    s.innerHTML = result.places.map((p, i) => `<option value="${i}">${p.city}, ${p.stateCode}</option>`).join("");
+    s.innerHTML = result.places.map((p, i) => `<option value="${i}">${escapeHtml(p.city)}, ${escapeHtml(p.stateCode)}</option>`).join("");
     s.hidden = document.getElementById("zipfirst-place-label").hidden = result.places.length < 2;
   }
 
   function fill(form, place, zip) {
     const root = form?.root || document;
     const fields = Object.fromEntries(Object.keys(TOKENS).map((k) => [k, form?.fields?.[k] || field(root, k)]));
-    set(fields.zip, zip);
+    const zipSet = set(fields.zip, zip);
     set(fields.city, place.city);
     if (!set(fields.state, place.stateCode)) set(fields.state, place.state);
     if (!set(fields.country, place.countryCode || "US")) set(fields.country, "United States");
     highlight(fields);
     document.getElementById("zipfirst-focus-street").hidden = !fields.street1;
-    setStatus(`Filled ${place.city}, ${place.stateCode}, United States. Check it; edge cases exist.`);
+    setStatus(`${zipSet ? "Filled ZIP and" : "Could not find ZIP field; filled"} ${place.city}, ${place.stateCode}, United States. Check it; edge cases exist.`);
   }
 
   function set(el, value) {
     if (!el || value == null) return false;
     if (el.tagName === "SELECT") return setSelect(el, value);
     const old = el.value;
-    el.value = value;
+    setInputValue(el, value);
     if (old !== el.value) fire(el);
     return true;
   }
 
+  function setInputValue(el, value) {
+    if (!el) return;
+    const proto = el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+    if (setter) setter.call(el, String(value));
+    else el.value = String(value);
+  }
+
   function setSelect(sel, value) {
-    const n = norm(value), aliases = new Set(["us", "usa", "unitedstates", "unitedstatesofamerica", "america"]);
+    const n = norm(value);
+    const aliases = new Set(["us", "usa", "unitedstates", "unitedstatesofamerica", "america"]);
     const opts = [...sel.options];
     const hit = opts.find((o) => norm(o.value) === n || norm(o.text) === n)
       || (aliases.has(n) && opts.find((o) => aliases.has(norm(o.value)) || aliases.has(norm(o.text))))
@@ -158,11 +206,39 @@
     return true;
   }
 
-  function fire(el) { el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); }
-  function highlight(fields) { clearHighlights(); Object.values(fields || {}).filter(Boolean).forEach((el) => el.classList.add("zipfirst-highlight")); }
-  function clearHighlights() { document.querySelectorAll(".zipfirst-highlight").forEach((el) => el.classList.remove("zipfirst-highlight")); }
-  function setStatus(t) { const el = document.querySelector("#zipfirst-panel .zipfirst-status"); if (el) el.textContent = t; }
-  function extractZip(v) { return String(v || "").match(/\b(\d{5})(?:-?\d{4})?\b/)?.[1] || ""; }
-  function norm(v) { return String(v || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
-  function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+  function fire(el) {
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function highlight(fields) {
+    clearHighlights();
+    Object.values(fields || {}).filter(Boolean).forEach((el) => el.classList.add("zipfirst-highlight"));
+  }
+
+  function clearHighlights() {
+    document.querySelectorAll(".zipfirst-highlight").forEach((el) => el.classList.remove("zipfirst-highlight"));
+  }
+
+  function setStatus(t) {
+    const el = document.querySelector("#zipfirst-panel .zipfirst-status");
+    if (el) el.textContent = t;
+  }
+
+  function extractZip(v) {
+    return String(v || "").match(/\b(\d{5})(?:-?\d{4})?\b/)?.[1] || "";
+  }
+
+  function norm(v) {
+    return String(v || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  }
+
+  function escapeHtml(v) {
+    return String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function debounce(fn, ms) {
+    let t;
+    return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  }
 })();

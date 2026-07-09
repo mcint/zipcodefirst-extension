@@ -1,10 +1,12 @@
-const cache = new Map();
+const api = globalThis.browser || chrome;
+const memoryCache = new Map();
+const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-chrome.action.onClicked.addListener(async (tab) => {
+api.action.onClicked.addListener(async (tab) => {
   if (!tab?.id || !/^https?:\/\//.test(tab.url || "")) return;
 
   try {
-    await chrome.scripting.insertCSS({
+    await api.scripting.insertCSS({
       target: { tabId: tab.id },
       files: ["src/content.css"]
     });
@@ -12,19 +14,19 @@ chrome.action.onClicked.addListener(async (tab) => {
     // CSS may already be inserted. Fine.
   }
 
-  await chrome.scripting.executeScript({
+  await api.scripting.executeScript({
     target: { tabId: tab.id },
     files: ["src/content.js"]
   });
 
   try {
-    await chrome.tabs.sendMessage(tab.id, { type: "zipfirst:activate" });
+    await api.tabs.sendMessage(tab.id, { type: "zipfirst:activate" });
   } catch (_) {
     // Some pages reject messaging after injection; executeScript still ran.
   }
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type !== "zipfirst:lookupZip") return false;
 
   lookupUSZip(message.zip)
@@ -38,7 +40,8 @@ async function lookupUSZip(rawZip) {
   const zip = String(rawZip || "").match(/\d{5}/)?.[0];
   if (!zip) throw new Error("Enter a 5-digit ZIP or ZIP+4.");
 
-  if (cache.has(zip)) return cache.get(zip);
+  const cached = await getCachedZip(zip);
+  if (cached) return cached;
 
   const res = await fetch(`https://api.zippopotam.us/us/${zip}`, {
     headers: { "accept": "application/json" }
@@ -69,8 +72,48 @@ async function lookupUSZip(rawZip) {
     country: "United States",
     countryCode: "US",
     provider: "zippopotam.us",
+    cachedAt: new Date().toISOString(),
+    ttlDays: Math.round(CACHE_TTL_MS / (24 * 60 * 60 * 1000)),
     places
   };
-  cache.set(zip, result);
+
+  await setCachedZip(zip, result);
   return result;
+}
+
+async function getCachedZip(zip) {
+  const fromMemory = memoryCache.get(zip);
+  if (fromMemory && !isExpired(fromMemory.cachedAt)) return fromMemory;
+
+  try {
+    const key = cacheKey(zip);
+    const stored = await api.storage.local.get(key);
+    const value = stored?.[key];
+    if (value && !isExpired(value.cachedAt)) {
+      memoryCache.set(zip, value);
+      return value;
+    }
+  } catch (_) {
+    // Storage is an optimization, not a dependency.
+  }
+
+  return null;
+}
+
+async function setCachedZip(zip, result) {
+  memoryCache.set(zip, result);
+  try {
+    await api.storage.local.set({ [cacheKey(zip)]: result });
+  } catch (_) {
+    // Fine; in-memory cache still works for this service-worker lifetime.
+  }
+}
+
+function cacheKey(zip) {
+  return `zipfirst:us:${zip}`;
+}
+
+function isExpired(cachedAt) {
+  const t = Date.parse(cachedAt || "");
+  return !t || Date.now() - t > CACHE_TTL_MS;
 }
